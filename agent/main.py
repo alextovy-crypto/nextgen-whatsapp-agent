@@ -76,5 +76,6 @@ async def webhook_handler(request: Request):
         return {"status": "ok"}
 
     except Exception as e:
-        logger.error(f"Error en webhook: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Siempre devolver 200 para que Whapi no reintente indefinidamente
+        logger.error(f"Error en webhook: {type(e).__name__}: {e}")
+        return {"status": "error", "detail": type(e).__name__}

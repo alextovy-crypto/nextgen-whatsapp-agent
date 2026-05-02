@@ -17,12 +17,24 @@ class ProveedorWhapi(ProveedorWhatsApp):
 
     async def parsear_webhook(self, request: Request) -> list[MensajeEntrante]:
         """Parsea el payload de Whapi.cloud."""
-        body = await request.json()
+        try:
+            body = await request.json()
+        except Exception:
+            # Whapi envía eventos de status/ack que pueden no ser JSON válido
+            logger.warning("Webhook recibido con body no-JSON, ignorando")
+            return []
+
         mensajes = []
         for msg in body.get("messages", []):
+            # Solo procesar mensajes de texto entrantes
+            if msg.get("type") != "text":
+                continue
+            texto = (msg.get("text") or {}).get("body", "")
+            if not texto:
+                continue
             mensajes.append(MensajeEntrante(
                 telefono=msg.get("chat_id", ""),
-                texto=msg.get("text", {}).get("body", ""),
+                texto=texto,
                 mensaje_id=msg.get("id", ""),
                 es_propio=msg.get("from_me", False),
             ))
